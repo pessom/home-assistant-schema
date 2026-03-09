@@ -1,16 +1,20 @@
 name: Update Home Assistant Schemas
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Tag or branch name'
+        required: true
+        default: 'main'
   schedule:
     - cron: '0 0 * * *'
-  workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
@@ -20,6 +24,7 @@ jobs:
         with:
           repository: keesschollaart81/vscode-home-assistant
           path: vscode-home-assistant
+          ref: ${{ github.event.inputs.version || 'main' }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -41,16 +46,11 @@ jobs:
           sudo apt-get install -y jq moreutils
           find json-schemas -type f -iname '*.json' -exec sh -c 'jq . "{}" | sponge "{}"' \;
 
-      - name: Update and Commit
-        run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
-          git add json-schemas/
-          
-          if [[ -n "$(git status --porcelain)" ]]; then
-            git commit -m "ci: Update schemas from vscode-home-assistant"
-            git push
-          else
-            echo "No changes found"
-          fi
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version || 'latest' }}
+          name: "Home Assistant Schema ${{ github.event.inputs.version || 'Latest' }}"
+          body: "Schemas are generated based on version/branch: ${{ github.event.inputs.version || 'main' }}"
+          files: |
+            json-schemas/*.json
