@@ -50,7 +50,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.version || 'latest' }}
-          name: "Home Assistant Schema ${{ github.event.inputs.version || 'Latest' }}"
+          name: "${{ github.event.inputs.version || 'Latest' }}"
           body: "Schemas are generated based on version/branch: ${{ github.event.inputs.version || 'main' }}"
           files: |
             json-schemas/*.json
