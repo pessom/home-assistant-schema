@@ -1,0 +1,56 @@
+name: Update Home Assistant Schemas
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v4
+
+      - name: Checkout vscode-home-assistant
+        uses: actions/checkout@v4
+        with:
+          repository: keesschollaart81/vscode-home-assistant
+          path: vscode-home-assistant
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Compile schemas
+        working-directory: vscode-home-assistant/src/language-service/
+        run: |
+          npm install
+          npm run compile
+
+      - name: Process and Copy schemas
+        run: |
+          mkdir -p json-schemas
+          # Copy compiled JSON
+          cp vscode-home-assistant/src/language-service/src/schemas/json/*.json json-schemas/
+          # format use jq
+          sudo apt-get install -y jq moreutils
+          find json-schemas -type f -iname '*.json' -exec sh -c 'jq . "{}" | sponge "{}"' \;
+
+      - name: Update and Commit
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          git add json-schemas/
+          
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git commit -m "ci: Update schemas from vscode-home-assistant"
+            git push
+          else
+            echo "No changes found"
+          fi
