@@ -6,7 +6,7 @@ on:
       version:
         description: 'Tag or branch name'
         required: true
-        default: 'main'
+        default: 'master'
   schedule:
     - cron: '0 0 * * *'
 
@@ -24,7 +24,7 @@ jobs:
         with:
           repository: keesschollaart81/vscode-home-assistant
           path: vscode-home-assistant
-          ref: ${{ github.event.inputs.version || 'main' }}
+          ref: ${{ github.event.inputs.version || 'master' }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
